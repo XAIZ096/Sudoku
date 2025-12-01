@@ -31,10 +31,10 @@ public:
 	ValueType getCell(int, int);
 	void setCell(ValueType, int, int);
 	void clearCell(int, int);
-    void updateConflicts();
     void printConflicts();
     bool isSolved();
 	bool getConflicts();
+	bool solve();
 
 private:
 	// The following matrices go from 1 to BoardSize in each
@@ -42,6 +42,28 @@ private:
 	matrix<ValueType> value;
 	matrix<vector<bool>> conflicts;
 };
+
+bool board::solve()
+{
+	if (isSolved()) return true;
+	else {
+		for (int row = 1; row <= 9; row++) {
+			for (int col = 1; col <= 9; col++) {
+				if (isBlank(row, col)) { //Finds the first remaining blank cell
+					for (int val = 1; val <= 9; val++) { //For each possible value of the cell
+						if (!conflicts[row - 1][col - 1][val - 1]) { //If this cell could be that value
+							setCell(row, col, val); //Set the cell to that value
+							if (solve()) return true; //Calls solve again. If the puzzle is now solved, return true
+						}
+					}
+					clearCell(row, col); //If puzzle is not solved, clear the current cell, resetting it to original state
+				}
+			}
+		}
+	}
+	return false;
+}
+
 
 board::board(int sqSize)
 	: value(BoardSize + 1, BoardSize + 1)
