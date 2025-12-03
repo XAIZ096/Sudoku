@@ -433,6 +433,7 @@ int main()
 			// Store and accumulate call counts
 			callCounts.push_back(calls);
 			totalRecursiveCalls += calls;
+		}
 
 			// Print board and recursive calls
 			cout << "Total boards processed: " << boardCount << endl;
