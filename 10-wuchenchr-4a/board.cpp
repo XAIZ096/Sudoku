@@ -4,6 +4,7 @@
 #include "d_matrix.h"
 #include "d_except.h"
 #include <list>
+#include <vector>
 #include <fstream>
 using namespace std;
 
@@ -18,6 +19,9 @@ const int BoardSize = SquareSize * SquareSize;
 const int MinValue = 1;
 const int MaxValue = 9;
 int numSolutions = 0;
+int recursiveCalls = 0;  // count recursive calls
+int totalRecursiveCalls = 0;  // total calls for all boards
+int boardCount = 0;  // count of boards processed
 
 class board
 	// Stores the entire Sudoku board
@@ -36,6 +40,12 @@ public:
 	bool getConflicts();
 	bool solve();
 
+int getRecursiveCalls() 
+{ 
+	return recursiveCalls; 
+	
+} 
+
 private:
 	// The following matrices go from 1 to BoardSize in each
 	// dimension, i.e., they are each (BoardSize+1) * (BoardSize+1)
@@ -45,22 +55,23 @@ private:
 
 bool board::solve()
 {
+	recursiveCalls++;  // Count this recursive call
 	if (isSolved()) return true;
-	else {
+	
 		for (int row = 1; row <= 9; row++) {
 			for (int col = 1; col <= 9; col++) {
 				if (isBlank(row, col)) { //Finds the first remaining blank cell
 					for (int val = 1; val <= 9; val++) { //For each possible value of the cell
 						if (!conflicts[row - 1][col - 1][val - 1]) { //If this cell could be that value
-							setCell(row, col, val); //Set the cell to that value
+							setCell(val, row, col); //Set the cell to that value
 							if (solve()) return true; //Calls solve again. If the puzzle is now solved, return true
+							clearCell(row, col); //If puzzle is not solved, clear the current cell, resetting it to original state
 						}
 					}
-					clearCell(row, col); //If puzzle is not solved, clear the current cell, resetting it to original state
+					return false;
 				}
 			}
 		}
-	}
 	return false;
 }
 
@@ -119,7 +130,7 @@ bool board::getConflicts()
 						tor = true;
 					}
 				}
-				//TO-DO: CHECK FOR CONFLICTS IN SQUARE
+				// CHECK FOR CONFLICTS IN SQUARE
 				int startRow = ((row - 1) / 3) * 3 + 1;
            		int startCol = ((col - 1) / 3) * 3 + 1;
             
@@ -147,7 +158,7 @@ void board::initialize(ifstream& fin)
 			fin >> ch;
 			// If the read char is not Blank
 			if (ch != '.')
-				setCell(i, j, ch - '0'); // Convert char to int
+				setCell(ch - '0', i, j); // Convert char to int
 		}
 }
 
@@ -236,14 +247,12 @@ bool board::isSolved()
 			// cell must be non-blank and between 1 and 9
 			if (v < MinValue || v > MaxValue)
 			{
-				cout << "Board is not solved." << endl;
 				return false;
 			}
 
 			// digit must not repeat in the row
 			if (used[v])
 			{
-				cout << "Board is not solved." << endl;
 				return false;
 			}
 
@@ -263,7 +272,6 @@ bool board::isSolved()
 
 			if (v < MinValue || v > MaxValue || used[v])
 			{
-				cout << "Board is not solved." << endl;
 				return false;
 			}
 
@@ -285,7 +293,6 @@ bool board::isSolved()
 
 					if (v < MinValue || v > MaxValue || used[v])
 					{
-						cout << "Board is not solved." << endl;
 						return false;
 					}
 
@@ -391,14 +398,54 @@ int main()
 
 	try
 	{
-		board b1(SquareSize); // creates the board object of the correct size
+		vector<int> callCounts;  // store call counts per board
+		
 		while (fin && fin.peek() != 'Z')
 		{
+			boardCount++;  // Increment board count
+			recursiveCalls = 0;  // Reset recursive counter for this board
+			board b1(SquareSize); // creates the board object of the correct size
 			b1.initialize(fin); // reads one Sudoku board from file and updates all conflict flags
 			cout << "Initial Board:" << endl;
 			b1.print(); // prints the 9×9 Sudoku grid to the screen
-			b1.printConflicts(); // prints conflict info for each cell (which digits are allowed)
-			b1.isSolved(); // checks if the board is already solved
+			bool solved = b1.solve();
+
+			if (solved) {
+				cout << "Solution found!" << endl;
+				cout << "Solved Board:" << endl;
+				b1.print();
+				
+				// Verify solution
+				if (b1.isSolved()) {
+					cout << "Board verification: Solved Correctly" << endl;
+				} 
+				else {
+					cout << "Board verification: Not Solved Correctly" << endl;
+				}
+			} 
+			else {
+				cout << "No solution found for this board." << endl;
+			}
+
+			int calls = b1.getRecursiveCalls(); // Get and display recursive call count for this board
+			cout << "Recursive calls for this board: " << calls;
+			
+			// Store and accumulate call counts
+			callCounts.push_back(calls);
+			totalRecursiveCalls += calls;
+
+			// Print board and recursive calls
+			cout << "Total boards processed: " << boardCount << endl;
+			cout << "Total recursive calls: " << totalRecursiveCalls << endl;
+
+			//Print average number of recursive calls needs
+			if (boardCount > 0) {
+			double averageCalls = static_cast<double>(totalRecursiveCalls) / boardCount;
+			cout << "Average recursive calls per board: " << averageCalls << endl;
+
+			
+			// b1.printConflicts(); // prints conflict info for each cell (which digits are allowed)
+			// b1.isSolved(); // checks if the board is already solved
 
 			cout << endl;
 		}
@@ -408,4 +455,5 @@ int main()
 		cout << ex.what() << endl;
 		exit(1);
 	}
+		return 0;
 }
