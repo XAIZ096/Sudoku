@@ -434,6 +434,9 @@ int main()
 			callCounts.push_back(calls);
 			totalRecursiveCalls += calls;
 
+			if (fin.peek() == '\n') fin.get(); // Skip possible newline characters
+		}
+
 			// Print board and recursive calls
 			cout << "Total boards processed: " << boardCount << endl;
 			cout << "Total recursive calls: " << totalRecursiveCalls << endl;
@@ -447,7 +450,6 @@ int main()
 			// b1.printConflicts(); // prints conflict info for each cell (which digits are allowed)
 			// b1.isSolved(); // checks if the board is already solved
 
-			cout << endl;
 		}
 	}
 	catch (indexRangeError& ex)
